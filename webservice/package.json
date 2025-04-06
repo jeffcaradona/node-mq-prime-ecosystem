@@ -1,0 +1,22 @@
+{
+  "name": "webservice",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/consumer.js",
+  "scripts": {
+   "start": "node src/consumer.js",
+   "dev": "nodemon src/consumer.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^5.0.1",
+    "ibmmq": "^2.1.3",
+    "mssql": "^11.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
