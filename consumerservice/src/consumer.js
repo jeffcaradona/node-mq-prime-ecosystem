@@ -25,14 +25,18 @@
  * 5. Response Posting: sendResponse() serializes the response object and posts it to DEV.QUEUE.2.
  * 6. Utility Functions: Contains the Miller–Rabin test and modular exponentiation.
  */
+import dotenv from 'dotenv'; // Import dotenv to handle .env files
 
+dotenv.config(); // Load environment variables from .env file
+
+console.info(process.env)
 import * as mq from 'ibmmq';  // IBM MQ client library
 const MQC = mq.MQC;           // IBM MQ constants
 
 // Define the target queue manager and queue names.
-const qMgr = 'QM1';
-const inputQueueName = 'DEV.QUEUE.1';
-const outputQueueName = 'DEV.QUEUE.2';
+const qMgr = process.env.MQ_QMGR || 'QM1';
+const inputQueueName = process.env.MQ_INPUT_QUEUE ||'DEV.QUEUE.1'; // Receives Messages sent from the API
+const outputQueueName = process.env.MQ_OUTPUT_QUEUE ||'DEV.QUEUE.2'; //Sends responses to API
 
 // Global variable to hold the output queue handle.
 let outQueueHandle;
@@ -193,6 +197,8 @@ function startConsumer() {
   mq.Connx(qMgr, cno, (err, hConn) => {
     if (err) {
       console.error("Error connecting to MQ:", err);
+      console.log("Retrying connection in 5 seconds...");
+      setTimeout(startConsumer, 5000); // Retry after 5 seconds
       return;
     }
     console.log(`Connected to queue manager ${qMgr}`);
@@ -206,6 +212,8 @@ function startConsumer() {
       if (err) {
         console.error("Error opening input queue:", err);
         mq.Disc(hConn, (discErr) => { if (discErr) console.error("Disconnect error:", discErr); });
+        console.log("Retrying connection in 5 seconds...");
+        setTimeout(startConsumer, 5000); // Retry after 5 seconds
         return;
       }
       console.log(`Input queue ${inputQueueName} opened.`);
@@ -219,6 +227,8 @@ function startConsumer() {
         if (err) {
           console.error("Error opening output queue:", err);
           mq.Disc(hConn, (discErr) => { if (discErr) console.error("Disconnect error:", discErr); });
+          console.log("Retrying connection in 5 seconds...");
+          setTimeout(startConsumer, 5000); // Retry after 5 seconds
           return;
         }
         console.log(`Output queue ${outputQueueName} opened.`);
@@ -233,13 +243,13 @@ function startConsumer() {
           gmo.Options = MQC.MQGMO_WAIT | MQC.MQGMO_CONVERT;
           gmo.WaitInterval = 3000;
           const buf = Buffer.alloc(1024);
-
-          // Retrieve a message using GetSync. The callback receives (err, len).
+        
           mq.GetSync(hIn, md, gmo, buf, (err, len) => {
             if (err) {
               if (err.mqrc === MQC.MQRC_NO_MSG_AVAILABLE) {
                 console.log("No message available. Polling again...");
-                return getMessage();
+                // Use setImmediate to schedule getMessage() after the stack clears.
+                return setImmediate(getMessage);
               } else {
                 console.error("Error getting message:", err);
                 return;
@@ -248,7 +258,8 @@ function startConsumer() {
             console.log(`Message received, length: ${len} bytes.`);
             const msgBuffer = buf.slice(0, len);
             processMessage(msgBuffer);
-            getMessage();
+            // Again, schedule the next polling iteration with setImmediate.
+            setImmediate(getMessage);
           });
         }
         // Begin polling for messages.

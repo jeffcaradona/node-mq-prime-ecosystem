@@ -4,14 +4,15 @@
   "type": "module",
   "main": "./src/consumer.js",
   "scripts": {
-   "start": "node src/consumer.js",
-   "dev": "nodemon src/consumer.js"
+    "start": "node src/consumer.js",
+    "dev": "nodemon src/consumer.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "ibmmq": "^2.1.3",
     "mssql": "^11.0.1"
