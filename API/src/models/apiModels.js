@@ -19,7 +19,7 @@
  * - initializeRecords(count): Calls generateRecords() to create the records, then calls populateRecords() to write them into Redis.
  */
 
-import { populateRecords, getRecord } from "./db.js";
+import { populateRecords, getRecord } from "./redis.js";
 
 /**
  * generateRecords

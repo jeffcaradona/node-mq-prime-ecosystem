@@ -23,13 +23,17 @@
  * Note: Top‑level await is used, so ensure Node.js v14+ and `"type": "module"`
  * is set in your package.json.
  */
+// Load environment variables from a .env file into process.env
 
 import { createClient } from 'redis';
+import dotenv from 'dotenv';
+dotenv.config();
+
 
 // Read connection settings from environment or use defaults.
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
-const REDIS_PASSWORD = process.env.REDIS_PASSWORD || 'appIsSecure';
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD || "redisIsSecure";
 
 // Build the Redis URL. (The official image uses a password via the --requirepass option.)
 const redisUrl = `redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}`;
