@@ -25,18 +25,17 @@
  * 5. Response Posting: sendResponse() serializes the response object and posts it to DEV.QUEUE.2.
  * 6. Utility Functions: Contains the Miller–Rabin test and modular exponentiation.
  */
-import dotenv from 'dotenv'; // Import dotenv to handle .env files
-
+import dotenv from "dotenv"; // Import dotenv to handle .env files
 dotenv.config(); // Load environment variables from .env file
 
-console.info(process.env)
-import * as mq from 'ibmmq';  // IBM MQ client library
-const MQC = mq.MQC;           // IBM MQ constants
+console.info(process.env);
+import * as mq from "ibmmq"; // IBM MQ client library
+const MQC = mq.MQC; // IBM MQ constants
 
 // Define the target queue manager and queue names.
-const qMgr = process.env.MQ_QMGR || 'QM1';
-const inputQueueName = process.env.MQ_INPUT_QUEUE ||'DEV.QUEUE.1'; // Receives Messages sent from the API
-const outputQueueName = process.env.MQ_OUTPUT_QUEUE ||'DEV.QUEUE.2'; //Sends responses to API
+const qMgr = process.env.MQ_QMGR || "QM1";
+const inputQueueName = process.env.MQ_INPUT_QUEUE || "DEV.QUEUE.1"; // Receives Messages sent from the API
+const outputQueueName = process.env.MQ_OUTPUT_QUEUE || "DEV.QUEUE.2"; //Sends responses to API
 
 // Global variable to hold the output queue handle.
 let outQueueHandle;
@@ -68,13 +67,17 @@ function processMessage(msg) {
       return;
     }
     const isPrime = millerRabin(value, 5);
-    console.log(`Record ${data.id} with value ${value.toString()} is ${isPrime ? 'prime' : 'not prime'}.`);
-    
+    console.log(
+      `Record ${data.id} with value ${value.toString()} is ${
+        isPrime ? "prime" : "not prime"
+      }.`
+    );
+
     // Create the response object.
     const response = {
       id: data.id,
       value: data.value,
-      prime: isPrime
+      prime: isPrime,
     };
     // Post the response to the output queue.
     sendResponse(response);
@@ -97,7 +100,9 @@ function sendResponse(responseObj) {
   const pmo = new mq.MQPMO();
   pmo.Options = MQC.MQPMO_NO_SYNCPOINT;
   if (!outQueueHandle) {
-    console.error("Output queue handle is not available. Cannot send response.");
+    console.error(
+      "Output queue handle is not available. Cannot send response."
+    );
     return;
   }
   mq.PutSync(outQueueHandle, mqmd, pmo, buf, (err) => {
@@ -129,8 +134,7 @@ function millerRabin(n, k) {
     s += 1n;
   }
 
-  WitnessLoop:
-  for (let i = 0; i < k; i++) {
+  WitnessLoop: for (let i = 0; i < k; i++) {
     const a = 2n + BigInt(Math.floor(Math.random() * Number(n - 4n)));
     let x = modPow(a, d, n);
     if (x === 1n || x === n - 1n) continue;
@@ -211,7 +215,9 @@ function startConsumer() {
     mq.Open(hConn, odIn, openOptionsIn, (err, hIn) => {
       if (err) {
         console.error("Error opening input queue:", err);
-        mq.Disc(hConn, (discErr) => { if (discErr) console.error("Disconnect error:", discErr); });
+        mq.Disc(hConn, (discErr) => {
+          if (discErr) console.error("Disconnect error:", discErr);
+        });
         console.log("Retrying connection in 5 seconds...");
         setTimeout(startConsumer, 5000); // Retry after 5 seconds
         return;
@@ -226,13 +232,15 @@ function startConsumer() {
       mq.Open(hConn, odOut, openOptionsOut, (err, hOut) => {
         if (err) {
           console.error("Error opening output queue:", err);
-          mq.Disc(hConn, (discErr) => { if (discErr) console.error("Disconnect error:", discErr); });
+          mq.Disc(hConn, (discErr) => {
+            if (discErr) console.error("Disconnect error:", discErr);
+          });
           console.log("Retrying connection in 5 seconds...");
           setTimeout(startConsumer, 5000); // Retry after 5 seconds
           return;
         }
         console.log(`Output queue ${outputQueueName} opened.`);
-        outQueueHandle = hOut;  // Save the output queue handle for later use.
+        outQueueHandle = hOut; // Save the output queue handle for later use.
 
         // --- Start polling for messages from the input queue ---
         function getMessage() {
@@ -243,7 +251,7 @@ function startConsumer() {
           gmo.Options = MQC.MQGMO_WAIT | MQC.MQGMO_CONVERT;
           gmo.WaitInterval = 3000;
           const buf = Buffer.alloc(1024);
-        
+
           mq.GetSync(hIn, md, gmo, buf, (err, len) => {
             if (err) {
               if (err.mqrc === MQC.MQRC_NO_MSG_AVAILABLE) {
